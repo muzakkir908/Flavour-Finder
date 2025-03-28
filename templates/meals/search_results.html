@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}Search Results for "{{ ingredient }}" - FlavorFinder{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1>Recipes with "{{ ingredient }}"</h1>
+        <p>Found {{ count }} recipes</p>
+        
+        <!-- Back to Search -->
+        <div class="mb-4">
+            <a href="{% url 'home' %}" class="btn btn-outline-secondary">Back to Search</a>
+        </div>
+        
+        <!-- Results -->
+        {% if meals %}
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            {% for meal in meals %}
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <img src="{{ meal.strMealThumb }}" class="card-img-top" alt="{{ meal.strMeal }}">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ meal.strMeal }}</h5>
+                        <a href="{% url 'meal_detail' meal_id=meal.idMeal %}" class="btn btn-primary">View Recipe</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            No recipes found for "{{ ingredient }}". Try another ingredient.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

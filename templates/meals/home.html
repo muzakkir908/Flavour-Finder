@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}FlavorFinder - Find Recipes by Ingredients{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 text-center">
+        <h1 class="display-4 mb-4">FlavorFinder</h1>
+        <p class="lead mb-5">Search for delicious recipes based on ingredients you have!</p>
+        
+        <div class="card p-4 shadow-sm">
+            <form action="{% url 'search_results' %}" method="get">
+                <div class="input-group mb-3">
+                    <input type="text" name="ingredient" class="form-control form-control-lg" 
+                           placeholder="Enter an ingredient (e.g., chicken, rice)" required>
+                    <button class="btn btn-primary btn-lg" type="submit">Search Recipes</button>
+                </div>
+            </form>
+            
+            <div class="mt-3">
+                <p>Or try something new:</p>
+                <a href="{% url 'random_meal' %}" class="btn btn-success">Surprise Me!</a>
+            </div>
+        </div>
+        
+        <div class="mt-5">
+            <h2>Popular Ingredients</h2>
+            <div class="d-flex flex-wrap justify-content-center mt-3 gap-2">
+                <a href="{% url 'search_results' %}?ingredient=chicken" class="btn btn-outline-secondary">Chicken</a>
+                <a href="{% url 'search_results' %}?ingredient=beef" class="btn btn-outline-secondary">Beef</a>
+                <a href="{% url 'search_results' %}?ingredient=pasta" class="btn btn-outline-secondary">Pasta</a>
+                <a href="{% url 'search_results' %}?ingredient=potato" class="btn btn-outline-secondary">Potato</a>
+                <a href="{% url 'search_results' %}?ingredient=rice" class="btn btn-outline-secondary">Rice</a>
+                <a href="{% url 'search_results' %}?ingredient=fish" class="btn btn-outline-secondary">Fish</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

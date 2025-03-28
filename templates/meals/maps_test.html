@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+
+{% block title %}Google Maps API Test - FlavorFinder{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1>Google Maps API Test</h1>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h2 class="h4 mb-0">Map Test</h2>
+            </div>
+            <div class="card-body">
+                <div id="test-map" style="height: 400px; width: 100%;"></div>
+            </div>
+            <div class="card-footer">
+                <div id="map-status" class="text-muted">Checking map status...</div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h2 class="h4 mb-0">API Key Status</h2>
+            </div>
+            <div class="card-body">
+                <button id="test-api-key" class="btn btn-primary">Test API Key</button>
+                <div id="api-key-status" class="mt-3"></div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h2 class="h4 mb-0">Browser Geolocation Test</h2>
+            </div>
+            <div class="card-body">
+                <button id="test-geolocation" class="btn btn-primary">Test Geolocation</button>
+                <div id="geolocation-status" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Simple map initialization without Places API
+    function initTestMap() {
+        try {
+            const statusEl = document.getElementById('map-status');
+            statusEl.textContent = "Initializing map...";
+            
+            const mapElement = document.getElementById('test-map');
+            if (!mapElement) {
+                throw new Error("Map element not found");
+            }
+            
+            // Default location (Dublin, Ireland)
+            const dublin = { lat: 53.349805, lng: -6.26031 };
+            
+            // Create a basic map
+            const map = new google.maps.Map(mapElement, {
+                center: dublin,
+                zoom: 12
+            });
+            
+            // Add a marker
+            const marker = new google.maps.Marker({
+                position: dublin,
+                map: map,
+                title: "Dublin, Ireland"
+            });
+            
+            statusEl.className = "text-success";
+            statusEl.textContent = "✓ Map loaded successfully!";
+        } catch (error) {
+            console.error("Map initialization error:", error);
+            const statusEl = document.getElementById('map-status');
+            statusEl.className = "text-danger";
+            statusEl.textContent = "✗ Error: " + error.message;
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Test API Key button
+        document.getElementById('test-api-key').addEventListener('click', function() {
+            const statusEl = document.getElementById('api-key-status');
+            statusEl.innerHTML = '<div class="spinner-border spinner-border-sm text-primary" role="status"></div> Testing API key...';
+            
+            fetch('/api/test-maps/')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        statusEl.className = "alert alert-success";
+                        statusEl.textContent = "✓ " + data.message;
+                    } else {
+                        statusEl.className = "alert alert-danger";
+                        statusEl.innerHTML = `✗ ${data.message}<br><small>${data.details || ''}</small>`;
+                    }
+                })
+                .catch(error => {
+                    statusEl.className = "alert alert-danger";
+                    statusEl.textContent = "✗ Error testing API key: " + error.message;
+                });
+        });
+        
+        // Test Geolocation button
+        document.getElementById('test-geolocation').addEventListener('click', function() {
+            const statusEl = document.getElementById('geolocation-status');
+            
+            if (!navigator.geolocation) {
+                statusEl.className = "alert alert-danger";
+                statusEl.textContent = "✗ Geolocation is not supported by your browser";
+                return;
+            }
+            
+            statusEl.innerHTML = '<div class="spinner-border spinner-border-sm text-primary" role="status"></div> Getting your location...';
+            
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    statusEl.className = "alert alert-success";
+                    statusEl.innerHTML = `
+                        ✓ Location obtained successfully!<br>
+                        Latitude: ${position.coords.latitude}<br>
+                        Longitude: ${position.coords.longitude}<br>
+                        Accuracy: ${position.coords.accuracy} meters
+                    `;
+                },
+                function(error) {
+                    statusEl.className = "alert alert-danger";
+                    
+                    const errorMessages = {
+                        1: "Permission denied. You need to allow location access in your browser settings.",
+                        2: "Location information is unavailable.",
+                        3: "The request to get user location timed out."
+                    };
+                    
+                    statusEl.innerHTML = `✗ Error: ${errorMessages[error.code] || error.message}`;
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                }
+            );
+        });
+    });
+    
+    window.initMap = function() {
+        // The main initMap function is called by the Google Maps API
+        // It will be used by the nearby_restaurants.html page
+        console.log("Main initMap called");
+        
+        // For our test page, we use a separate function
+        if (document.getElementById('test-map')) {
+            initTestMap();
+        }
+    };
+</script>
+{% endblock %}

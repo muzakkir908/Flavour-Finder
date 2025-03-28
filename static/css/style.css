@@ -1,0 +1,41 @@
+/* Custom styles for FlavorFinder */
+
+/* Body styles */
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 60px; /* Space for footer */
+}
+
+/* Footer styles */
+.footer {
+    margin-top: auto;
+}
+
+/* Card hover effects */
+.card {
+    transition: transform 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+/* Meal card image size standardization */
+.card-img-top {
+    height: 200px;
+    object-fit: cover;
+}
+
+/* Custom background for jumbotron */
+.jumbotron {
+    background-color: #f8f9fa;
+    padding: 2rem;
+    border-radius: 0.3rem;
+}
+
+/* Style for ingredient badges */
+.badge {
+    font-weight: normal;
+}

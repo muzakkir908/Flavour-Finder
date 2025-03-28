@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block title %}My Favorite Recipes - FlavorFinder{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1>My Favorite Recipes</h1>
+        
+        {% if favorites %}
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            {% for favorite in favorites %}
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <img src="{{ favorite.meal_thumb }}" class="card-img-top" alt="{{ favorite.meal_name }}">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ favorite.meal_name }}</h5>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a href="{% url 'meal_detail' meal_id=favorite.meal_id %}" class="btn btn-primary">View Recipe</a>
+                            <button class="btn btn-outline-danger remove-favorite" data-meal-id="{{ favorite.meal_id }}">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-footer text-muted">
+                        <small>Added: {{ favorite.date_added|date:"F j, Y" }}</small>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <p>You haven't added any favorites yet.</p>
+            <a href="{% url 'home' %}" class="btn btn-primary">Find Recipes</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set up event listeners for remove buttons
+    document.querySelectorAll('.remove-favorite').forEach(button => {
+        button.addEventListener('click', function() {
+            const mealId = this.getAttribute('data-meal-id');
+            removeFavorite(mealId, this);
+        });
+    });
+    
+    function removeFavorite(mealId, button) {
+        // Get CSRF token
+        const csrfToken = getCookie('csrftoken');
+        
+        // Send request
+        fetch(`/meal/${mealId}/favorite/remove/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'removed') {
+                // Remove the card from UI
+                const card = button.closest('.col');
+                card.remove();
+                
+                // Check if there are any favorites left
+                const favorites = document.querySelectorAll('.col');
+                if (favorites.length === 0) {
+                    location.reload(); // Reload to show the "no favorites" message
+                }
+            }
+        });
+    }
+    
+    // Helper function to get CSRF token from cookies
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+{% endblock %}

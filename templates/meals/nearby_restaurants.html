@@ -1,0 +1,501 @@
+{% extends 'base.html' %}
+
+{% block title %}Nearby Restaurants - FlavorFinder{% endblock %}
+
+{% block extra_css %}
+<style>
+    #map {
+        height: 500px;
+        width: 100%;
+        margin-top: 20px;
+        border-radius: 8px;
+    }
+    .restaurant-list {
+        max-height: 500px;
+        overflow-y: auto;
+    }
+    .restaurant-item {
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    .restaurant-item:hover {
+        background-color: #f8f9fa;
+    }
+    .rating-stars {
+        color: #ffc107;
+    }
+    .restaurant-photo {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        border-radius: 4px;
+        margin-right: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1>Nearby Restaurants for "{{ query }}"</h1>
+        
+        <div class="card">
+            <div class="card-header">
+                <h2 class="h4 mb-0">Search for restaurants</h2>
+            </div>
+            <div class="card-body">
+                <form id="restaurantSearchForm" action="{% url 'nearby_restaurants' %}" method="get">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <input type="text" name="q" class="form-control" placeholder="Type of food (e.g., pizza, sushi)" 
+                                   value="{{ query }}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <button id="useMyLocation" type="button" class="btn btn-secondary">Use My Location</button>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-primary w-100" type="submit">Search</button>
+                        </div>
+                    </div>
+                    <input type="hidden" name="lat" id="latitude" value="{{ latitude }}">
+                    <input type="hidden" name="lng" id="longitude" value="{{ longitude }}">
+                </form>
+            </div>
+        </div>
+        
+        <div class="mt-3">
+            <div class="alert alert-info">
+                <h5>Tip: Better results</h5>
+                <ol>
+                    <li>Allow location access in your browser for more accurate results</li>
+                    <li>Try specific queries like "Italian restaurants" or "Pizza delivery"</li>
+                    <li>Add a location for better results (e.g., "sushi in downtown")</li>
+                </ol>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-8">
+                <div id="map" class="border rounded">
+                    <div id="map-loading" class="d-flex justify-content-center align-items-center bg-light" style="height: 500px;">
+                        <div class="text-center">
+                            <div class="spinner-border text-primary mb-3" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p>Loading map...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="h5 mb-0">Results</h3>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="restaurantList" class="restaurant-list list-group list-group-flush">
+                            <div class="list-group-item text-center py-4">
+                                <p class="mb-0">Search restaurants or use your location to see results</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let map;
+    let service;
+    let infowindow;
+    let markers = [];
+    
+    window.initMap = function() {
+        console.log("Map initializing...");
+        
+        // Remove the loading indicator
+        const mapLoadingEl = document.getElementById('map-loading');
+        if (mapLoadingEl) {
+            mapLoadingEl.remove();
+        }
+        
+        // Default location (use user's location if available, otherwise use a default)
+        const latitude = parseFloat("{{ latitude }}") || 40.7128;
+        const longitude = parseFloat("{{ longitude }}") || -74.0060;
+        const defaultLocation = { lat: latitude, lng: longitude };
+        
+        console.log("Using location:", defaultLocation);
+        
+        try {
+            // Create the map instance
+            const mapElement = document.getElementById("map");
+            if (!mapElement) {
+                throw new Error("Map element not found!");
+            }
+            
+            map = new google.maps.Map(mapElement, {
+                center: defaultLocation,
+                zoom: 14,
+            });
+            
+            infowindow = new google.maps.InfoWindow();
+            
+            // Create a marker for the current location
+            new google.maps.Marker({
+                position: defaultLocation,
+                map: map,
+                title: "Your location",
+                icon: {
+                    path: google.maps.SymbolPath.CIRCLE,
+                    scale: 10,
+                    fillColor: "#4285F4",
+                    fillOpacity: 1,
+                    strokeColor: "#FFFFFF",
+                    strokeWeight: 2
+                }
+            });
+            
+            // Initialize Places service
+            try {
+                service = new google.maps.places.PlacesService(map);
+                console.log("Places service initialized");
+            } catch (error) {
+                console.error("Error initializing Places service:", error);
+                showMapError("Could not initialize restaurant search service. Please try again later.");
+                return;
+            }
+            
+            // If we have coordinates and a query, search for restaurants
+            if ("{{ latitude }}" && "{{ longitude }}" && "{{ query }}") {
+                console.log("Searching for restaurants with query:", "{{ query }}");
+                searchNearbyRestaurants(defaultLocation);
+            } else {
+                console.log("Missing parameters for search:", {
+                    latitude: "{{ latitude }}",
+                    longitude: "{{ longitude }}",
+                    query: "{{ query }}"
+                });
+                
+                if ("{{ latitude }}" && "{{ longitude }}") {
+                    // We have coordinates but no query
+                    document.getElementById('restaurantList').innerHTML = 
+                        '<div class="list-group-item text-center py-4">' +
+                        '<p class="mb-0">Enter a food type to search for nearby restaurants.</p>' +
+                        '</div>';
+                }
+            }
+        } catch (error) {
+            console.error("Error initializing map:", error);
+            showMapError("Could not initialize the map. Please try again later.");
+        }
+    };
+    
+    function showMapError(message) {
+        const mapElement = document.getElementById("map");
+        if (mapElement) {
+            mapElement.innerHTML = `
+                <div class="d-flex justify-content-center align-items-center bg-light" style="height: 500px;">
+                    <div class="text-center text-danger">
+                        <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+                        <p>${message}</p>
+                    </div>
+                </div>
+            `;
+        }
+        
+        document.getElementById('restaurantList').innerHTML = 
+            '<div class="list-group-item text-center py-4">' +
+            '<p class="mb-0">Error loading map. Please try again later.</p>' +
+            '</div>';
+    }
+    
+    function searchNearbyRestaurants(location) {
+        const query = "{{ query }}";
+        if (!query) return;
+        
+        console.log("Searching for restaurants near", location, "with query:", query);
+        
+        // Show loading indicator
+        document.getElementById('restaurantList').innerHTML = 
+            '<div class="list-group-item text-center py-4">' +
+            '<div class="spinner-border text-primary mb-2"></div>' +
+            '<p class="mb-0">Searching for restaurants...</p>' +
+            '</div>';
+        
+        const request = {
+            location: location,
+            radius: '1500',
+            type: ['restaurant', 'cafe', 'bar', 'meal_delivery', 'meal_takeaway'],
+            keyword: query
+        };
+        
+        console.log("Places request:", request);
+        
+        if (!service) {
+            console.error("Places service not initialized");
+            return;
+        }
+        
+        service.nearbySearch(request, (results, status) => {
+            console.log("Places API response status:", status);
+            if (status === google.maps.places.PlacesServiceStatus.OK && results && results.length > 0) {
+                console.log("Found", results.length, "restaurants");
+                clearMarkers();
+                updateRestaurantList(results);
+                
+                for (let i = 0; i < results.length; i++) {
+                    createMarker(results[i], i);
+                }
+                
+                // Center map on first result
+                if (results.length > 0) {
+                    map.setCenter(results[0].geometry.location);
+                }
+            } else {
+                console.error("Places API error or no results:", status);
+                document.getElementById('restaurantList').innerHTML = 
+                    '<div class="list-group-item text-center py-4">' +
+                    '<p class="mb-0">No restaurants found. Try a different search term.</p>' +
+                    '</div>';
+            }
+        });
+    }
+    
+    function createMarker(place, index) {
+        if (!place.geometry || !place.geometry.location) return;
+        
+        const marker = new google.maps.Marker({
+            map,
+            position: place.geometry.location,
+            title: place.name,
+            label: (index + 1).toString()
+        });
+        
+        markers.push(marker);
+        
+        google.maps.event.addListener(marker, "click", () => {
+            // Get additional details for this place
+            service.getDetails(
+                { placeId: place.place_id, fields: ['name', 'formatted_address', 'rating', 'formatted_phone_number', 'website', 'opening_hours', 'photos'] },
+                (placeDetails, status) => {
+                    if (status === google.maps.places.PlacesServiceStatus.OK) {
+                        // Prepare opening hours text if available
+                        let hoursText = '';
+                        if (placeDetails.opening_hours && placeDetails.opening_hours.weekday_text) {
+                            hoursText = '<h6>Hours:</h6><ul class="small mb-2">';
+                            placeDetails.opening_hours.weekday_text.forEach(day => {
+                                hoursText += `<li>${day}</li>`;
+                            });
+                            hoursText += '</ul>';
+                        }
+                        
+                        // Prepare photo URL if available
+                        let photoUrl = '';
+                        if (placeDetails.photos && placeDetails.photos.length > 0) {
+                            photoUrl = placeDetails.photos[0].getUrl({ maxWidth: 300, maxHeight: 200 });
+                        }
+                        
+                        // Open status text
+                        let openNowText = '';
+                        if (placeDetails.opening_hours) {
+                            if (placeDetails.opening_hours.isOpen()) {
+                                openNowText = '<span class="badge bg-success">Open Now</span>';
+                            } else {
+                                openNowText = '<span class="badge bg-danger">Closed</span>';
+                            }
+                        }
+                        
+                        // Format rating stars
+                        const rating = placeDetails.rating || 0;
+                        const ratingStars = `
+                            <div class="d-flex align-items-center">
+                                <div class="rating-stars me-1">
+                                    ${'★'.repeat(Math.round(rating))}${'☆'.repeat(5 - Math.round(rating))}
+                                </div>
+                                <span>${rating.toFixed(1)}</span>
+                            </div>
+                        `;
+                        
+                        // Links section
+                        let linksSection = '';
+                        if (placeDetails.website || placeDetails.formatted_phone_number) {
+                            linksSection = `<div class="mt-2">`;
+                            if (placeDetails.website) {
+                                linksSection += `<a href="${placeDetails.website}" target="_blank" class="btn btn-sm btn-outline-primary me-2">Website</a>`;
+                            }
+                            if (placeDetails.formatted_phone_number) {
+                                linksSection += `<a href="tel:${placeDetails.formatted_phone_number}" class="btn btn-sm btn-outline-success">Call</a>`;
+                            }
+                            linksSection += `</div>`;
+                        }
+                        
+                        // Build the content
+                        let content = `
+                            <div class="info-window" style="max-width: 300px;">
+                                ${photoUrl ? `<img src="${photoUrl}" class="img-fluid mb-2 rounded" alt="${placeDetails.name}">` : ''}
+                                <h5>${placeDetails.name} ${openNowText}</h5>
+                                ${ratingStars}
+                                <p class="small mt-1 mb-2">${placeDetails.formatted_address || place.vicinity}</p>
+                                ${hoursText}
+                                ${linksSection}
+                            </div>
+                        `;
+                        
+                        infowindow.setContent(content);
+                    } else {
+                        // Fallback to basic info if details aren't available
+                        let content = `
+                            <div>
+                                <h5>${place.name}</h5>
+                                <p>${place.vicinity}</p>
+                                ${place.rating ? `<p>Rating: ${place.rating}/5</p>` : ''}
+                            </div>
+                        `;
+                        infowindow.setContent(content);
+                    }
+                    
+                    infowindow.open(map, marker);
+                }
+            );
+        });
+    }
+    
+    function clearMarkers() {
+        for (let marker of markers) {
+            marker.setMap(null);
+        }
+        markers = [];
+    }
+    
+    function updateRestaurantList(places) {
+        const listContainer = document.getElementById('restaurantList');
+        let listHTML = '';
+        
+        if (places.length === 0) {
+            listHTML = `
+                <div class="list-group-item text-center py-4">
+                    <p class="mb-0">No restaurants found. Try a different search term.</p>
+                </div>
+            `;
+        } else {
+            places.forEach((place, index) => {
+                // Format the rating stars
+                const rating = place.rating || 0;
+                const ratingStars = '★'.repeat(Math.round(rating)) + '☆'.repeat(5 - Math.round(rating));
+                
+                // Get a photo URL if available
+                let photoHtml = '';
+                if (place.photos && place.photos.length > 0) {
+                    const photoUrl = place.photos[0].getUrl({ maxWidth: 100, maxHeight: 100 });
+                    photoHtml = `<img src="${photoUrl}" class="restaurant-photo" alt="${place.name}">`;
+                }
+                
+                listHTML += `
+                    <div class="list-group-item restaurant-item" onclick="highlightMarker(${index})">
+                        <div class="d-flex">
+                            <div class="badge bg-primary rounded-pill me-2 align-self-start">${index+1}</div>
+                            ${photoHtml}
+                            <div>
+                                <h5 class="mb-1">${place.name}</h5>
+                                <p class="mb-1 small">${place.vicinity}</p>
+                                <div class="d-flex align-items-center">
+                                    <div class="rating-stars me-1">
+                                        ${ratingStars}
+                                    </div>
+                                    <small>${place.rating ? place.rating.toFixed(1) + '/5' : 'Not rated'}</small>
+                                    ${place.user_ratings_total ? ` • <small>${place.user_ratings_total} reviews</small>` : ''}
+                                </div>
+                                ${place.price_level ? `<small>Price: ${'$'.repeat(place.price_level)}</small>` : ''}
+                                ${place.open_now ? '<span class="badge bg-success ms-2">Open</span>' : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        
+        listContainer.innerHTML = listHTML;
+    }
+    
+    function highlightMarker(index) {
+        if (markers[index]) {
+            google.maps.event.trigger(markers[index], 'click');
+            // Scroll the map to center on this marker
+            map.panTo(markers[index].getPosition());
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set up location button
+        const locationBtn = document.getElementById('useMyLocation');
+        if (locationBtn) {
+            locationBtn.addEventListener('click', function() {
+                const loadingEl = document.createElement('span');
+                loadingEl.className = 'spinner-border spinner-border-sm ms-2';
+                this.appendChild(loadingEl);
+                this.disabled = true;
+                
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        function(position) {
+                            // Success callback
+                            document.getElementById('latitude').value = position.coords.latitude;
+                            document.getElementById('longitude').value = position.coords.longitude;
+                            console.log("Location obtained:", position.coords.latitude, position.coords.longitude);
+                            
+                            // Show visual feedback
+                            const locationFeedback = document.createElement('div');
+                            locationFeedback.className = 'alert alert-success mt-2';
+                            locationFeedback.textContent = `Location obtained: ${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)}`;
+                            document.getElementById('restaurantSearchForm').appendChild(locationFeedback);
+                            
+                            // Submit form after a short delay to show the feedback
+                            setTimeout(function() {
+                                document.getElementById('restaurantSearchForm').submit();
+                            }, 1000);
+                        },
+                        function(error) {
+                            // Error callback
+                            console.error("Geolocation error:", error);
+                            const errorMessages = {
+                                1: "Permission denied. Please allow location access and try again.",
+                                2: "Location unavailable. Please try again later.",
+                                3: "Location request timed out. Please try again."
+                            };
+                            
+                            const message = errorMessages[error.code] || "Couldn't get your location. Please try again.";
+                            
+                            const errorEl = document.createElement('div');
+                            errorEl.className = 'alert alert-danger mt-2';
+                            errorEl.textContent = message;
+                            document.getElementById('restaurantSearchForm').appendChild(errorEl);
+                            
+                            // Re-enable the button
+                            if (locationBtn.contains(loadingEl)) {
+                                locationBtn.removeChild(loadingEl);
+                            }
+                            locationBtn.disabled = false;
+                        },
+                        { 
+                            enableHighAccuracy: true,
+                            timeout: 10000,
+                            maximumAge: 0
+                        }
+                    );
+                } else {
+                    alert('Geolocation is not supported by your browser');
+                    if (locationBtn.contains(loadingEl)) {
+                        locationBtn.removeChild(loadingEl);
+                    }
+                    locationBtn.disabled = false;
+                }
+            });
+        } else {
+            console.error("Location button not found");
+        }
+    });
+</script>
+{% endblock %}
