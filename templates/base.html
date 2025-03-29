@@ -37,7 +37,7 @@
                         <a class="nav-link" href="{% url 'favorites' %}">My Favorites</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'nearby_restaurants' %}?q=food">Nearby Restaurants</a>
+                        <a class="nav-link" href="{% url 'meal_planner' %}">Meal Planner</a>
                     </li>
                 </ul>
             </div>
@@ -68,7 +68,7 @@
     };
     </script>
     <!-- Load Google Maps API asynchronously with Places library -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtX02OJOKyVBmE3QV45Pm8qQKkHGlZ0xQ&libraries=places&callback=initMap" async defer></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&libraries=places&callback=initMap" async defer></script>
     
     <!-- Custom JS -->
     {% block extra_js %}{% endblock %}

@@ -76,8 +76,8 @@
                     <button id="favoriteBtn" class="btn btn-outline-danger mb-2" data-meal-id="{{ meal.idMeal }}" data-meal-name="{{ meal.strMeal }}" data-meal-thumb="{{ meal.strMealThumb }}">
                         <i class="fa fa-heart"></i> Add to Favorites
                     </button>
-                    <a href="{% url 'nearby_restaurants' %}?q={{ meal.strMeal }}" class="btn btn-outline-primary">
-                        Find nearby restaurants
+                    <a href="{% url 'meal_planner' %}" class="btn btn-outline-primary">
+                        Create meal plan
                     </a>
                 </div>
             </div>

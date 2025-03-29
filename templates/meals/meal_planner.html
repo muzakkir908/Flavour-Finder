@@ -1,0 +1,296 @@
+{% extends 'base.html' %}
+
+{% block title %}Weekly Meal Planner - FlavorFinder{% endblock %}
+
+{% block extra_css %}
+<style>
+    .meal-card {
+        transition: transform 0.3s ease;
+    }
+    .meal-card:hover {
+        transform: translateY(-5px);
+    }
+    .meal-img {
+        height: 150px;
+        object-fit: cover;
+    }
+    .nutrition-badge {
+        min-width: 80px;
+    }
+    .plan-day {
+        margin-bottom: 3rem;
+        padding-bottom: 2rem;
+        border-bottom: 1px solid #e9ecef;
+    }
+    .plan-day:last-child {
+        border-bottom: none;
+    }
+    .meal-type-header {
+        background-color: #f8f9fa;
+        padding: 5px 10px;
+        border-radius: 4px;
+        margin-bottom: 15px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">Weekly Meal Planner</h1>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h2 class="h4 mb-0">Customize Your Meal Plan</h2>
+            </div>
+            <div class="card-body">
+                <form action="{% url 'meal_planner' %}" method="get">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label for="diet" class="form-label">Diet Type</label>
+                            <select class="form-select" id="diet" name="diet">
+                                <option value="balanced" {% if diet == 'balanced' %}selected{% endif %}>Balanced</option>
+                                <option value="vegetarian" {% if diet == 'vegetarian' %}selected{% endif %}>Vegetarian</option>
+                                <option value="vegan" {% if diet == 'vegan' %}selected{% endif %}>Vegan</option>
+                                <option value="high-protein" {% if diet == 'high-protein' %}selected{% endif %}>High Protein</option>
+                                <option value="low-carb" {% if diet == 'low-carb' %}selected{% endif %}>Low Carb</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="meals" class="form-label">Meals Per Day</label>
+                            <select class="form-select" id="meals" name="meals">
+                                <option value="1" {% if meals_per_day == 1 %}selected{% endif %}>1 (Dinner Only)</option>
+                                <option value="2" {% if meals_per_day == 2 %}selected{% endif %}>2 (Breakfast & Dinner)</option>
+                                <option value="3" {% if meals_per_day == 3 %}selected{% endif %}>3 (Breakfast, Lunch & Dinner)</option>
+                                <option value="4" {% if meals_per_day == 4 %}selected{% endif %}>4 (3 Meals + 1 Snack)</option>
+                                <option value="5" {% if meals_per_day == 5 %}selected{% endif %}>5 (3 Meals + 2 Snacks)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="days" class="form-label">Number of Days</label>
+                            <select class="form-select" id="days" name="days">
+                                <option value="1" {% if days == 1 %}selected{% endif %}>1 Day</option>
+                                <option value="3" {% if days == 3 %}selected{% endif %}>3 Days</option>
+                                <option value="5" {% if days == 5 %}selected{% endif %}>5 Days</option>
+                                <option value="7" {% if days == 7 %}selected{% endif %}>7 Days</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="calories" class="form-label">Target Daily Calories</label>
+                            <input type="text" class="form-control" id="calories" name="calories" placeholder="e.g., 2000" value="{{ calories }}">
+                        </div>
+                    </div>
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="submit" class="btn btn-primary">Generate Meal Plan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        {% if meal_plan %}
+        <div class="alert alert-info mb-4">
+            <div class="d-flex align-items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-info-circle fa-2x me-3"></i>
+                </div>
+                <div>
+                    <h4 class="alert-heading mb-1">Your Personalized Meal Plan</h4>
+                    <p class="mb-0">Here's your {{ days }}-day meal plan with {{ meals_per_day }} meals per day following a {{ diet }} diet.</p>
+                </div>
+            </div>
+        </div>
+        
+        {% for day in meal_plan %}
+        <div class="plan-day">
+            <h2 class="h3 mb-3">{{ day.date }}</h2>
+            
+            <div class="card mb-3">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="h5 mb-0">Daily Nutrition Summary</h3>
+                        <div>
+                            <span class="badge bg-primary nutrition-badge">{{ day.nutrition.calories }} Cal</span>
+                            <span class="badge bg-success nutrition-badge">{{ day.nutrition.protein }}g Protein</span>
+                            <span class="badge bg-warning text-dark nutrition-badge">{{ day.nutrition.carbs }}g Carbs</span>
+                            <span class="badge bg-danger nutrition-badge">{{ day.nutrition.fat }}g Fat</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            {% for meal_item in day.meals %}
+            <div class="mb-4">
+                <div class="meal-type-header">
+                    <h4 class="h5 mb-0">{{ meal_item.type }}</h4>
+                </div>
+                
+                <div class="card meal-card shadow-sm">
+                    <div class="row g-0">
+                        <div class="col-md-3">
+                            <img src="{{ meal_item.meal.image }}" class="img-fluid rounded-start meal-img" alt="{{ meal_item.meal.name }}">
+                        </div>
+                        <div class="col-md-9">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ meal_item.meal.name }}</h5>
+                                <div class="d-flex flex-wrap gap-2 mb-2">
+                                    <span class="badge bg-light text-dark">{{ meal_item.meal.calories }} Calories</span>
+                                    <span class="badge bg-light text-dark">{{ meal_item.meal.protein }}g Protein</span>
+                                    <span class="badge bg-light text-dark">{{ meal_item.meal.carbs }}g Carbs</span>
+                                    <span class="badge bg-light text-dark">{{ meal_item.meal.fat }}g Fat</span>
+                                </div>
+                                <div class="mt-2">
+                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#recipeModal" data-meal="{{ meal_item.meal.name }}">
+                                        View Recipe
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-success add-to-grocery-list" data-meal="{{ meal_item.meal.name }}">
+                                        Add to Grocery List
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+        
+        <div class="d-grid gap-2 col-md-6 mx-auto mb-4">
+            <button class="btn btn-primary" id="saveButton">
+                <i class="far fa-save me-2"></i> Save This Meal Plan
+            </button>
+            <button class="btn btn-outline-primary" id="printButton">
+                <i class="fas fa-print me-2"></i> Print Meal Plan
+            </button>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <p>Use the form above to generate your personalized meal plan!</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Recipe Modal -->
+<div class="modal fade" id="recipeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="recipeModalLabel">Recipe Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading recipe details...</p>
+                </div>
+                <div id="recipeContent" class="d-none">
+                    <!-- Recipe content will be loaded here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="saveRecipeBtn">Save Recipe</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Print button functionality
+        const printButton = document.getElementById('printButton');
+        if (printButton) {
+            printButton.addEventListener('click', function() {
+                window.print();
+            });
+        }
+        
+        // Recipe modal functionality
+        const recipeModal = document.getElementById('recipeModal');
+        if (recipeModal) {
+            recipeModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const mealName = button.getAttribute('data-meal');
+                const modalTitle = recipeModal.querySelector('.modal-title');
+                modalTitle.textContent = mealName;
+                
+                // Simulate loading recipe details
+                setTimeout(function() {
+                    const loadingElement = recipeModal.querySelector('.modal-body .text-center');
+                    const recipeContent = document.getElementById('recipeContent');
+                    
+                    loadingElement.classList.add('d-none');
+                    recipeContent.classList.remove('d-none');
+                    
+                    // Populate with sample recipe details
+                    recipeContent.innerHTML = `
+                        <div class="mb-4">
+                            <h5>Ingredients</h5>
+                            <ul>
+                                <li>2 cups main ingredient</li>
+                                <li>1 tablespoon oil or butter</li>
+                                <li>1 teaspoon salt</li>
+                                <li>1/2 teaspoon pepper</li>
+                                <li>1 cup vegetables, chopped</li>
+                                <li>Optional herbs and spices to taste</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h5>Instructions</h5>
+                            <ol>
+                                <li>Prepare all ingredients by measuring and chopping as needed.</li>
+                                <li>Heat oil in a large pan over medium heat.</li>
+                                <li>Add the main ingredients and cook until golden, about 5-7 minutes.</li>
+                                <li>Add vegetables and spices, stir to combine.</li>
+                                <li>Cover and simmer for 15-20 minutes until fully cooked.</li>
+                                <li>Serve hot and enjoy!</li>
+                            </ol>
+                        </div>
+                        <div class="mt-3">
+                            <h5>Nutrition Information</h5>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <p><strong>Calories:</strong> 350</p>
+                                </div>
+                                <div class="col-md-3">
+                                    <p><strong>Protein:</strong> 15g</p>
+                                </div>
+                                <div class="col-md-3">
+                                    <p><strong>Carbs:</strong> 30g</p>
+                                </div>
+                                <div class="col-md-3">
+                                    <p><strong>Fat:</strong> 20g</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }, 1000);
+            });
+        }
+        
+        // Add to grocery list
+        const addButtons = document.querySelectorAll('.add-to-grocery-list');
+        addButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const mealName = this.getAttribute('data-meal');
+                alert(`Added ${mealName} ingredients to your grocery list!`);
+                // In a real app, you would handle this with proper storage
+            });
+        });
+        
+        // Save button functionality
+        const saveButton = document.getElementById('saveButton');
+        if (saveButton) {
+            saveButton.addEventListener('click', function() {
+                alert('Meal plan saved! You can access it from your account dashboard.');
+                // In a real app, you would save to the database
+            });
+        }
+    });
+</script>
+{% endblock %}

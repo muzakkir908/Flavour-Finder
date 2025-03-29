@@ -29,7 +29,7 @@ SECRET_KEY = 'django-insecure-^-&=h2xo(yu(qtp*9i$0b5sn+z#w^gbyzht(i!j01@l4gjch*v
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
-GOOGLE_MAPS_API_KEY = 'AIzaSyAtX02OJOKyVBmE3QV45Pm8qQKkHGlZ0xQ'
+GOOGLE_MAPS_API_KEY = 'AIzaSyDV9El6FZy8TtzNDCJ1YX0D_Lf6VfbwJAI'
 
 CSRF_COOKIE_SECURE = False
 CSRF_COOKIE_HTTPONLY = False
@@ -69,6 +69,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'meals.context_processors.google_maps_api_key',  # Keep only this one for Google Maps
             ],
         },
     },
