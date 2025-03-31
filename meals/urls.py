@@ -10,7 +10,7 @@ urlpatterns = [
     path('favorites/check/<int:meal_id>/', views.check_favorite, name='check_favorite'),
     path('favorites/', views.favorites, name='favorites'),
     path('random/', views.random_meal, name='random_meal'),
-    path('meal-planner/', views.meal_planner, name='meal_planner'),  # New URL for meal planner
+    path('meal-planner/', views.meal_planner, name='meal_planner'),
     path('api/test-maps/', views.test_maps_api, name='test_maps_api'),
     path('maps-test/', views.maps_test, name='maps_test'),
 ]

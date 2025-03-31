@@ -21,5 +21,9 @@ from django.urls import path, include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('meals.urls')),  # Include the meals app URLs
+    path('accounts/', include('accounts.urls')),  # Add this line
+    path('profile/', include('profiles.urls')),  # Add this line
+
+
 
 ]

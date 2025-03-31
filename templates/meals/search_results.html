@@ -3,34 +3,69 @@
 {% block title %}Search Results for "{{ ingredient }}" - FlavorFinder{% endblock %}
 
 {% block content %}
-<div class="row">
+<div class="search-results-header" data-aos="fade-up">
+    <div class="container">
+        <h1 class="text-white">
+            <i class="fas fa-search me-2"></i>Recipes with "<span class="search-term">{{ ingredient }}</span>"
+        </h1>
+        <p class="text-white mb-0">Found {{ count }} recipes</p>
+    </div>
+</div>
+
+<div class="row mb-4">
     <div class="col-12">
-        <h1>Recipes with "{{ ingredient }}"</h1>
-        <p>Found {{ count }} recipes</p>
-        
         <!-- Back to Search -->
         <div class="mb-4">
-            <a href="{% url 'home' %}" class="btn btn-outline-secondary">Back to Search</a>
+            <a href="{% url 'home' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Search
+            </a>
         </div>
         
         <!-- Results -->
         {% if meals %}
-        <div class="row row-cols-1 row-cols-md-3 g-4">
+        <div class="recipe-grid">
             {% for meal in meals %}
-            <div class="col">
-                <div class="card h-100 shadow-sm">
-                    <img src="{{ meal.strMealThumb }}" class="card-img-top" alt="{{ meal.strMeal }}">
-                    <div class="card-body">
-                        <h5 class="card-title">{{ meal.strMeal }}</h5>
-                        <a href="{% url 'meal_detail' meal_id=meal.idMeal %}" class="btn btn-primary">View Recipe</a>
+            <div class="recipe-card" data-aos="fade-up" data-aos-delay="{{ forloop.counter|add:100 }}">
+                <div class="recipe-card-image">
+                    <img src="{{ meal.strMealThumb }}" alt="{{ meal.strMeal }}">
+                </div>
+                <div class="recipe-card-body">
+                    <h5 class="recipe-card-title">{{ meal.strMeal }}</h5>
+                    <div class="recipe-card-footer">
+                        <a href="{% url 'meal_detail' meal_id=meal.idMeal %}" class="btn btn-primary w-100">
+                            <i class="fas fa-utensils me-2"></i>View Recipe
+                        </a>
                     </div>
                 </div>
             </div>
             {% endfor %}
         </div>
         {% else %}
-        <div class="alert alert-info">
-            No recipes found for "{{ ingredient }}". Try another ingredient.
+        <div class="card p-5 text-center" data-aos="fade-up">
+            <div class="favorites-empty">
+                <div class="favorites-empty-icon">
+                    <i class="fas fa-search-minus"></i>
+                </div>
+                <h2 class="h4 mb-3">No recipes found for "{{ ingredient }}"</h2>
+                <p class="text-muted mb-4">Try a different ingredient or check out some popular options below.</p>
+                
+                <div class="row justify-content-center">
+                    <div class="col-md-8">
+                        <div class="d-flex flex-wrap justify-content-center gap-2 mb-4">
+                            <a href="{% url 'search_results' %}?ingredient=chicken" class="btn btn-outline-primary">Chicken</a>
+                            <a href="{% url 'search_results' %}?ingredient=beef" class="btn btn-outline-primary">Beef</a>
+                            <a href="{% url 'search_results' %}?ingredient=pasta" class="btn btn-outline-primary">Pasta</a>
+                            <a href="{% url 'search_results' %}?ingredient=rice" class="btn btn-outline-primary">Rice</a>
+                            <a href="{% url 'search_results' %}?ingredient=potato" class="btn btn-outline-primary">Potato</a>
+                            <a href="{% url 'search_results' %}?ingredient=fish" class="btn btn-outline-primary">Fish</a>
+                        </div>
+                        
+                        <a href="{% url 'random_meal' %}" class="btn btn-success">
+                            <i class="fas fa-random me-2"></i>Try a Random Recipe
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
         {% endif %}
     </div>

@@ -34,6 +34,14 @@ GOOGLE_MAPS_API_KEY = 'AIzaSyDV9El6FZy8TtzNDCJ1YX0D_Lf6VfbwJAI'
 CSRF_COOKIE_SECURE = False
 CSRF_COOKIE_HTTPONLY = False
 
+
+# CSRF settings for Cloud9
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.amazonaws.com',
+    'https://*.cloud9.eu-west-1.amazonaws.com',
+    'https://*.vfs.cloud9.eu-west-1.amazonaws.com',
+    'http://0.0.0.0:8080',
+]
 # Application definition
 
 INSTALLED_APPS = [
@@ -44,7 +52,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'meals',
+    'accounts', 
+    'profiles',  
+
+
 ]
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -68,7 +81,9 @@ TEMPLATES = [
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+                'django.contrib.messages.context_processors.messages',                'accounts.context_processors.auth_context',  # Add this line
+                'accounts.context_processors.auth_context',  # Add this line
+
                 'meals.context_processors.google_maps_api_key',  # Keep only this one for Google Maps
             ],
         },
@@ -129,3 +144,10 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # For development
+
+OTP_SERVICE_URL = 'https://tezo7kqd0k.execute-api.eu-west-1.amazonaws.com/prod/OTP-service-v1'
+
+LOGIN_URL = '/accounts/login/'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'

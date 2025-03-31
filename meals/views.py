@@ -7,6 +7,7 @@ from django.conf import settings
 from django.http import JsonResponse
 from .models import Favorite
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
 
 
 # API endpoints
@@ -98,6 +99,10 @@ def search_results(request):
         meals = sample_meals.get(ingredient.lower(), [])
         print(f"Using sample data for {ingredient}: {len(meals)} recipes")
     
+    # Initialize data as an empty dict if it's not defined yet
+    if 'data' not in locals():
+        data = {'meals': None}
+    
     context = {
         'ingredient': ingredient,
         'meals': meals,
@@ -121,53 +126,6 @@ def nearby_restaurants(request):
     }
     
     return render(request, 'meals/nearby_restaurants.html', context)
-
-@csrf_exempt
-def add_favorite(request, meal_id):
-    """Add a meal to favorites."""
-    if request.method == 'POST':
-        meal_name = request.POST.get('meal_name')
-        meal_thumb = request.POST.get('meal_thumb')
-        
-        # Check if already in favorites
-        favorite, created = Favorite.objects.get_or_create(
-            meal_id=meal_id,
-            defaults={
-                'meal_name': meal_name,
-                'meal_thumb': meal_thumb
-            }
-        )
-        
-        if created:
-            return JsonResponse({'status': 'added'})
-        else:
-            return JsonResponse({'status': 'exists'})
-    
-    return JsonResponse({'status': 'error'}, status=400)
-
-@csrf_exempt
-def remove_favorite(request, meal_id):
-    """Remove a meal from favorites."""
-    if request.method == 'POST':
-        try:
-            favorite = Favorite.objects.get(meal_id=meal_id)
-            favorite.delete()
-            return JsonResponse({'status': 'removed'})
-        except Favorite.DoesNotExist:
-            return JsonResponse({'status': 'not_found'})
-    
-    return JsonResponse({'status': 'error'}, status=400)
-
-def favorites(request):
-    """Display user's favorite meals."""
-    favorites = Favorite.objects.all().order_by('-date_added')
-    
-    context = {
-        'favorites': favorites
-    }
-    
-    return render(request, 'meals/favorites.html', context)
-
 def meal_detail(request, meal_id):
     """Display detailed information about a specific meal."""
     # Call the MealDB API to get meal details
@@ -191,6 +149,18 @@ def meal_detail(request, meal_id):
                 'measure': measure
             })
     
+    # Process instructions into steps
+    instruction_steps = []
+    if meal.get('strInstructions'):
+        # Replace line breaks with a standard format
+        instructions_text = meal['strInstructions'].replace('\r\n', '\n').replace('\r', '\n')
+        # Split into paragraphs
+        paragraphs = instructions_text.split('\n')
+        # Add non-empty paragraphs as steps
+        for paragraph in paragraphs:
+            if paragraph.strip() and len(paragraph.strip()) > 5:
+                instruction_steps.append(paragraph.strip())
+    
     # Extract YouTube video ID if present
     if meal.get('strYoutube'):
         youtube_url = meal['strYoutube']
@@ -206,15 +176,11 @@ def meal_detail(request, meal_id):
     
     context = {
         'meal': meal,
-        'ingredients': ingredients
+        'ingredients': ingredients,
+        'instruction_steps': instruction_steps
     }
     
     return render(request, 'meals/meal_detail.html', context)
-
-def check_favorite(request, meal_id):
-    """Check if a meal is in favorites."""
-    is_favorite = Favorite.objects.filter(meal_id=meal_id).exists()
-    return JsonResponse({'is_favorite': is_favorite})
 
 def random_meal(request):
     """Redirect to a random meal detail page."""
@@ -259,8 +225,6 @@ def maps_test(request):
         'GOOGLE_MAPS_API_KEY': settings.GOOGLE_MAPS_API_KEY
     }
     return render(request, 'meals/maps_test.html', context)
-    
-    
     
 def meal_planner(request):
     """Generate a weekly meal plan based on preferences."""
@@ -416,3 +380,60 @@ def generate_meal_plan(diet='balanced', meals_per_day=3, days=7, calories=''):
         meal_plan.append(day_plan)
     
     return meal_plan
+
+# Login-required versions of the favorite functions
+@login_required
+@csrf_exempt
+def add_favorite(request, meal_id):
+    """Add a meal to favorites."""
+    if request.method == 'POST':
+        meal_name = request.POST.get('meal_name')
+        meal_thumb = request.POST.get('meal_thumb')
+        
+        # Check if already in favorites for this user
+        favorite, created = Favorite.objects.get_or_create(
+            user=request.user,
+            meal_id=meal_id,
+            defaults={
+                'meal_name': meal_name,
+                'meal_thumb': meal_thumb
+            }
+        )
+        
+        if created:
+            return JsonResponse({'status': 'added'})
+        else:
+            return JsonResponse({'status': 'exists'})
+    
+    return JsonResponse({'status': 'error'}, status=400)
+
+@login_required
+@csrf_exempt
+def remove_favorite(request, meal_id):
+    """Remove a meal from favorites."""
+    if request.method == 'POST':
+        try:
+            favorite = Favorite.objects.get(user=request.user, meal_id=meal_id)
+            favorite.delete()
+            return JsonResponse({'status': 'removed'})
+        except Favorite.DoesNotExist:
+            return JsonResponse({'status': 'not_found'})
+    
+    return JsonResponse({'status': 'error'}, status=400)
+
+@login_required
+def favorites(request):
+    """Display user's favorite meals."""
+    favorites = Favorite.objects.filter(user=request.user).order_by('-date_added')
+    
+    context = {
+        'favorites': favorites
+    }
+    
+    return render(request, 'meals/favorites.html', context)
+
+@login_required
+def check_favorite(request, meal_id):
+    """Check if a meal is in favorites."""
+    is_favorite = Favorite.objects.filter(user=request.user, meal_id=meal_id).exists()
+    return JsonResponse({'is_favorite': is_favorite})

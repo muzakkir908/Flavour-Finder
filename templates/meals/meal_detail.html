@@ -2,84 +2,248 @@
 
 {% block title %}{{ meal.strMeal }} - FlavorFinder{% endblock %}
 
+{% block extra_css %}
+<style>
+    .instruction-step {
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-radius: var(--radius-md);
+        background-color: rgba(255, 255, 255, 0.8);
+        box-shadow: var(--shadow-sm);
+        transition: all var(--transition-normal);
+    }
+    
+    .instruction-step:hover {
+        background-color: white;
+        box-shadow: var(--shadow-md);
+    }
+    
+    .step-number {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        background-color: var(--primary);
+        color: white;
+        border-radius: 50%;
+        margin-right: 0.75rem;
+    }
+    
+    /* Print styles specific to this page */
+    @media print {
+        .step-number {
+            border: 1px solid #000;
+            color: #000;
+            background-color: transparent;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="row">
-    <div class="col-md-8">
-        <nav aria-label="breadcrumb">
+<div class="row mb-4">
+    <div class="col-md-8" data-aos="fade-right">
+        <nav aria-label="breadcrumb" class="mb-3">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
                 <li class="breadcrumb-item active">{{ meal.strMeal }}</li>
             </ol>
         </nav>
         
-        <h1 class="mb-3">{{ meal.strMeal }}</h1>
+        <h1 class="mb-4 display-5">{{ meal.strMeal }}</h1>
         
-        <div class="mb-4">
+        <!-- Quick navigation buttons -->
+        <div class="mb-4 d-flex flex-wrap gap-2" data-aos="fade-up">
+            <a href="#ingredients" class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-clipboard-list me-1"></i> Jump to Ingredients
+            </a>
+            <a href="#instructions" class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-list-ol me-1"></i> Jump to Instructions
+            </a>
+            {% if meal.strYoutube %}
+            <a href="#video" class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-play-circle me-1"></i> Jump to Video
+            </a>
+            {% else %}
+            <button class="btn btn-sm btn-outline-secondary" disabled>
+                <i class="fas fa-play-circle me-1"></i> No Video Available
+            </button>
+            {% endif %}
+        </div>
+        
+        <div class="meal-image mb-4">
             <img src="{{ meal.strMealThumb }}" alt="{{ meal.strMeal }}" class="img-fluid rounded">
         </div>
         
-        <div class="card mb-4">
-            <div class="card-header">
-                <h2 class="h4 mb-0">Information</h2>
-            </div>
-            <div class="card-body">
-                <p><strong>Category:</strong> {{ meal.strCategory }}</p>
-                <p><strong>Area:</strong> {{ meal.strArea }}</p>
+        <div class="mb-4" data-aos="fade-up">
+            <div class="d-flex flex-wrap gap-2 mb-4">
+                <span class="badge bg-primary p-2">
+                    <i class="fas fa-utensils me-1"></i> {{ meal.strCategory }}
+                </span>
+                <span class="badge bg-secondary p-2">
+                    <i class="fas fa-globe-americas me-1"></i> {{ meal.strArea }}
+                </span>
                 {% if meal.strTags %}
-                <p><strong>Tags:</strong> {{ meal.strTags }}</p>
+                    {% for tag in meal.strTags.split %}
+                    <span class="badge bg-light text-dark p-2">
+                        <i class="fas fa-tag me-1"></i> {{ tag }}
+                    </span>
+                    {% endfor %}
                 {% endif %}
             </div>
         </div>
         
-        <div class="card mb-4">
-            <div class="card-header">
-                <h2 class="h4 mb-0">Instructions</h2>
+        <div class="card mb-4" id="instructions" data-aos="fade-up">
+            <div class="card-header bg-primary text-white">
+                <h2 class="h4 mb-0"><i class="fas fa-list-ol me-2"></i>Instructions</h2>
             </div>
             <div class="card-body">
-                <p>{{ meal.strInstructions|linebreaks }}</p>
+                <div class="instructions-wrapper">
+                    {% if instruction_steps %}
+                        {% for step in instruction_steps %}
+                            <div class="instruction-step" data-aos="fade-up" data-aos-delay="{{ forloop.counter|add:200 }}">
+                                <div class="d-flex">
+                                    <span class="step-number">{{ forloop.counter }}</span>
+                                    <p class="mb-0">{{ step }}</p>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>No detailed instructions available for this recipe.
+                        </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
         
         {% if meal.strYoutube %}
-        <div class="card mb-4">
-            <div class="card-header">
-                <h2 class="h4 mb-0">Video Tutorial</h2>
+        <div class="card mb-4" id="video" data-aos="fade-up">
+            <div class="card-header bg-primary text-white">
+                <h2 class="h4 mb-0"><i class="fas fa-play-circle me-2"></i>Video Tutorial</h2>
             </div>
             <div class="card-body">
                 <div class="ratio ratio-16x9">
-                    {% with youtube_id=meal.strYoutube|cut:'https://www.youtube.com/watch?v=' %}
-                        <iframe src="https://www.youtube.com/embed/{{ youtube_id }}" allowfullscreen></iframe>
-                    {% endwith %}
+                    <iframe src="{{ meal.youtube_embed_url }}" allowfullscreen></iframe>
                 </div>
             </div>
         </div>
         {% endif %}
     </div>
     
-    <div class="col-md-4">
-        <div class="card sticky-top" style="top: 20px;">
-            <div class="card-header">
-                <h2 class="h4 mb-0">Ingredients</h2>
+    <div class="col-md-4" data-aos="fade-left">
+        <div class="ingredients-card sticky-top" id="ingredients" style="top: 20px;">
+            <div class="ingredients-header">
+                <h2 class="h4 mb-0"><i class="fas fa-clipboard-list me-2"></i>Ingredients</h2>
             </div>
-            <div class="card-body">
-                <ul class="list-group list-group-flush">
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush ingredients-list">
                     {% for ingredient in ingredients %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        {{ ingredient.name }}
-                        <span class="badge bg-primary rounded-pill">{{ ingredient.measure }}</span>
+                    <li class="list-group-item d-flex justify-content-between align-items-center" data-aos="fade-left" data-aos-delay="{{ forloop.counter|add:100 }}">
+                        <div class="ingredient-item">
+                            <i class="fas fa-check-circle ingredient-icon"></i>
+                            {{ ingredient.name }}
+                        </div>
+                        <span class="badge ingredient-badge rounded-pill">{{ ingredient.measure }}</span>
                     </li>
                     {% endfor %}
                 </ul>
             </div>
             <div class="card-footer">
                 <div class="d-grid gap-2">
-                    <button id="favoriteBtn" class="btn btn-outline-danger mb-2" data-meal-id="{{ meal.idMeal }}" data-meal-name="{{ meal.strMeal }}" data-meal-thumb="{{ meal.strMealThumb }}">
-                        <i class="fa fa-heart"></i> Add to Favorites
+                    {% if user.is_authenticated %}
+                    <button id="favoriteBtn" class="btn btn-outline-danger btn-lg mb-2 favorite-btn" data-meal-id="{{ meal.idMeal }}" data-meal-name="{{ meal.strMeal }}" data-meal-thumb="{{ meal.strMealThumb }}">
+                        <i class="far fa-heart"></i> Add to Favorites
                     </button>
-                    <a href="{% url 'meal_planner' %}" class="btn btn-outline-primary">
-                        Create meal plan
+                    {% else %}
+                    <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-outline-secondary btn-lg mb-2">
+                        <i class="far fa-heart"></i> Login to Save Favorites
+                    </a>
+                    {% endif %}
+                    
+                    <a href="{% url 'meal_planner' %}" class="btn btn-outline-primary btn-lg">
+                        <i class="fas fa-calendar-alt me-1"></i> Add to Meal Plan
+                    </a>
+                    
+                    <button class="btn btn-outline-success btn-lg mt-2" id="printRecipeBtn">
+                        <i class="fas fa-print me-1"></i> Print Recipe
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-4" data-aos="fade-up">
+            <div class="card-header bg-secondary text-white">
+                <h3 class="h5 mb-0"><i class="fas fa-share-alt me-2"></i>Share Recipe</h3>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <a href="#" class="btn btn-outline-primary" data-bs-toggle="tooltip" title="Share on Facebook">
+                        <i class="fab fa-facebook-f"></i>
+                    </a>
+                    <a href="#" class="btn btn-outline-info" data-bs-toggle="tooltip" title="Share on Twitter">
+                        <i class="fab fa-twitter"></i>
+                    </a>
+                    <a href="#" class="btn btn-outline-danger" data-bs-toggle="tooltip" title="Share on Pinterest">
+                        <i class="fab fa-pinterest-p"></i>
+                    </a>
+                    <a href="#" class="btn btn-outline-success" data-bs-toggle="tooltip" title="Share via WhatsApp">
+                        <i class="fab fa-whatsapp"></i>
+                    </a>
+                    <a href="#" class="btn btn-outline-secondary" data-bs-toggle="tooltip" title="Share via Email">
+                        <i class="fas fa-envelope"></i>
                     </a>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-5" data-aos="fade-up">
+    <div class="card-header bg-primary text-white">
+        <h2 class="h4 mb-0"><i class="fas fa-utensils me-2"></i>You might also like</h2>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4 mb-3" data-aos="fade-up" data-aos-delay="100">
+                <a href="#" class="text-decoration-none">
+                    <div class="card h-100">
+                        <img src="https://www.themealdb.com/images/media/meals/wvpsxx1468256321.jpg" class="card-img-top" alt="Similar recipe">
+                        <div class="card-body">
+                            <h5 class="card-title">Teriyaki Chicken Casserole</h5>
+                            <div class="d-flex align-items-center text-muted">
+                                <i class="fas fa-utensils me-1"></i> {{ meal.strCategory }}
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-4 mb-3" data-aos="fade-up" data-aos-delay="200">
+                <a href="#" class="text-decoration-none">
+                    <div class="card h-100">
+                        <img src="https://www.themealdb.com/images/media/meals/1549542877.jpg" class="card-img-top" alt="Similar recipe">
+                        <div class="card-body">
+                            <h5 class="card-title">Spicy Arrabiata Penne</h5>
+                            <div class="d-flex align-items-center text-muted">
+                                <i class="fas fa-utensils me-1"></i> {{ meal.strCategory }}
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-4 mb-3" data-aos="fade-up" data-aos-delay="300">
+                <a href="#" class="text-decoration-none">
+                    <div class="card h-100">
+                        <img src="https://www.themealdb.com/images/media/meals/rvxxuy1468312893.jpg" class="card-img-top" alt="Similar recipe">
+                        <div class="card-body">
+                            <h5 class="card-title">Pasta Carbonara</h5>
+                            <div class="d-flex align-items-center text-muted">
+                                <i class="fas fa-utensils me-1"></i> {{ meal.strCategory }}
+                            </div>
+                        </div>
+                    </div>
+                </a>
             </div>
         </div>
     </div>
@@ -90,32 +254,58 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const favoriteBtn = document.getElementById('favoriteBtn');
+    const printRecipeBtn = document.getElementById('printRecipeBtn');
     
-    console.log("Meal detail page loaded, checking favorite status for meal ID:", "{{ meal.idMeal }}");
-    
-    // Check if meal is already in favorites
-    checkFavoriteStatus('{{ meal.idMeal }}');
-    
-    favoriteBtn.addEventListener('click', function() {
-        const mealId = this.getAttribute('data-meal-id');
-        const mealName = this.getAttribute('data-meal-name');
-        const mealThumb = this.getAttribute('data-meal-thumb');
+    if (favoriteBtn) {
+        console.log("Meal detail page loaded, checking favorite status for meal ID:", "{{ meal.idMeal }}");
         
-        console.log("Favorite button clicked for meal:", {
-            id: mealId,
-            name: mealName,
-            thumb: mealThumb
+        // Check if meal is already in favorites
+        checkFavoriteStatus('{{ meal.idMeal }}');
+        
+        favoriteBtn.addEventListener('click', function() {
+            {% if user.is_authenticated %}
+            const mealId = this.getAttribute('data-meal-id');
+            const mealName = this.getAttribute('data-meal-name');
+            const mealThumb = this.getAttribute('data-meal-thumb');
+            
+            console.log("Favorite button clicked for meal:", {
+                id: mealId,
+                name: mealName,
+                thumb: mealThumb
+            });
+            
+            if (this.classList.contains('btn-danger')) {
+                // Remove from favorites
+                console.log("Removing from favorites...");
+                removeFavorite(mealId);
+                
+                // Show toast notification
+                showToast('Removed from Favorites', `${mealName} has been removed from your favorites.`, 'info');
+            } else {
+                // Add to favorites
+                console.log("Adding to favorites...");
+                addFavorite(mealId, mealName, mealThumb);
+                
+                // Show toast notification
+                showToast('Added to Favorites', `${mealName} has been added to your favorites!`, 'success');
+            }
+            {% else %}
+            // Redirect to login if user is not authenticated
+            window.location.href = "{% url 'login' %}?next=" + window.location.pathname;
+            {% endif %}
         });
-        
-        if (this.classList.contains('btn-danger')) {
-            // Remove from favorites
-            console.log("Removing from favorites...");
-            removeFavorite(mealId);
-        } else {
-            // Add to favorites
-            console.log("Adding to favorites...");
-            addFavorite(mealId, mealName, mealThumb);
-        }
+    }
+    
+    if (printRecipeBtn) {
+        printRecipeBtn.addEventListener('click', function() {
+            window.print();
+        });
+    }
+    
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
     });
     
     function addFavorite(mealId, mealName, mealThumb) {
@@ -146,11 +336,12 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.status === 'added' || data.status === 'exists') {
                 favoriteBtn.classList.remove('btn-outline-danger');
                 favoriteBtn.classList.add('btn-danger');
-                favoriteBtn.innerHTML = '<i class="fa fa-heart"></i> Remove from Favorites';
+                favoriteBtn.innerHTML = '<i class="fas fa-heart"></i> Remove from Favorites';
             }
         })
         .catch(error => {
             console.error("Error adding favorite:", error);
+            showToast('Error', 'Could not add to favorites. Please try again.', 'error');
         });
     }
     
@@ -176,11 +367,12 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.status === 'removed') {
                 favoriteBtn.classList.remove('btn-danger');
                 favoriteBtn.classList.add('btn-outline-danger');
-                favoriteBtn.innerHTML = '<i class="fa fa-heart"></i> Add to Favorites';
+                favoriteBtn.innerHTML = '<i class="far fa-heart"></i> Add to Favorites';
             }
         })
         .catch(error => {
             console.error("Error removing favorite:", error);
+            showToast('Error', 'Could not remove from favorites. Please try again.', 'error');
         });
     }
     
@@ -196,7 +388,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.is_favorite) {
                 favoriteBtn.classList.remove('btn-outline-danger');
                 favoriteBtn.classList.add('btn-danger');
-                favoriteBtn.innerHTML = '<i class="fa fa-heart"></i> Remove from Favorites';
+                favoriteBtn.innerHTML = '<i class="fas fa-heart"></i> Remove from Favorites';
             }
         })
         .catch(error => {
@@ -218,6 +410,77 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         return cookieValue;
+    }
+    
+    // Toast notification function
+    function showToast(title, message, type = 'info') {
+        // Create toast container if it doesn't exist
+        let toastContainer = document.querySelector('.toast-container');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.className = 'toast-container';
+            document.body.appendChild(toastContainer);
+        }
+        
+        // Create toast element
+        const toast = document.createElement('div');
+        toast.className = 'toast show';
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+        
+        // Set toast color based on type
+        let bgColor = '#4ECDC4';
+        let iconClass = 'fa-info-circle';
+        
+        switch(type) {
+            case 'success':
+                bgColor = '#6BFF98';
+                iconClass = 'fa-check-circle';
+                break;
+            case 'error':
+            case 'danger':
+                bgColor = '#FF6B6B';
+                iconClass = 'fa-exclamation-circle';
+                break;
+            case 'warning':
+                bgColor = '#FFD166';
+                iconClass = 'fa-exclamation-triangle';
+                break;
+        }
+        
+        // Create toast content
+        toast.innerHTML = `
+            <div class="toast-header" style="background-color: ${bgColor}">
+                <i class="fas ${iconClass} me-2"></i>
+                <strong class="me-auto">${title}</strong>
+                <small>Just now</small>
+                <button type="button" class="btn-close" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                ${message}
+            </div>
+        `;
+        
+        // Add toast to container
+        toastContainer.appendChild(toast);
+        
+        // Remove toast after 5 seconds
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => {
+                toastContainer.removeChild(toast);
+            }, 300);
+        }, 5000);
+        
+        // Add click event to close button
+        const closeBtn = toast.querySelector('.btn-close');
+        closeBtn.addEventListener('click', () => {
+            toast.classList.remove('show');
+            setTimeout(() => {
+                toastContainer.removeChild(toast);
+            }, 300);
+        });
     }
 });
 </script>
