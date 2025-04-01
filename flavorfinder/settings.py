@@ -18,6 +18,7 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
+STATIC_ROOT = '/app/staticfiles'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -28,7 +29,8 @@ SECRET_KEY = 'django-insecure-^-&=h2xo(yu(qtp*9i$0b5sn+z#w^gbyzht(i!j01@l4gjch*v
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['.compute.amazonaws.com', 'localhost', '127.0.0.1', '*']
+
 GOOGLE_MAPS_API_KEY = 'AIzaSyDV9El6FZy8TtzNDCJ1YX0D_Lf6VfbwJAI'
 
 CSRF_COOKIE_SECURE = False
@@ -137,8 +139,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # Add this line
+# STATIC_URL = 'static/'
 
 
 # Default primary key field type

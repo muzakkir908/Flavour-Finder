@@ -56,3 +56,6 @@ support-info==1.0
 systemd-python==235
 urllib3==1.25.10
 wcwidth==0.2.5
+Django==4.2.20
+requests==2.31.0
+gunicorn==21.2.0
