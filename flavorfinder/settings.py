@@ -103,7 +103,6 @@ DATABASES = {
         'NAME': os.path.join(BASE_DIR, 'data' if os.path.exists('data') else '', 'db.sqlite3'),
     }
 }
-
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
