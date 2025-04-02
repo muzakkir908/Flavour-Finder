@@ -1232,6 +1232,26 @@ a {
     box-shadow: var(--shadow-sm);
 }
 
+#instructions, #video {
+    margin-bottom: 20px;
+}
+
+#instructions .card-body, #video .card-body {
+    padding-bottom: 0;
+}
+
+#video iframe {
+    margin-bottom: 0;
+}
+
+.instruction-step {
+    margin-bottom: 10px;
+}
+
+.instructions-wrapper {
+    margin-bottom: 0;
+}
+
 /* User profile page */
 .profile-header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);

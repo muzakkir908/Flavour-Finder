@@ -1,6 +1,7 @@
 import json
 import random
 import requests
+import os
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.conf import settings
@@ -8,7 +9,7 @@ from django.http import JsonResponse
 from .models import Favorite
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
-
+from .utils import fetch_advertisements
 
 # API endpoints
 MEALDB_BASE_URL = "https://www.themealdb.com/api/json/v1/1"
@@ -18,7 +19,13 @@ RANDOM_MEAL_URL = f"{MEALDB_BASE_URL}/random.php"
 
 def home(request):
     """Home page view with search form and random meal button."""
-    return render(request, 'meals/home.html')
+    ads = fetch_advertisements()
+    context = {
+        'advertisements': ads,
+        'is_new_installation': not request.session.get('visited', False)
+    }
+    request.session['visited'] = True
+    return render(request, 'meals/home.html', context)
 
 def search_results(request):
     """Display search results based on the ingredient provided."""
@@ -61,7 +68,7 @@ def search_results(request):
         meals = []
     
     # Fallback to sample data if no results
-    if not meals and ingredient.lower() in ['chicken', 'beef', 'pasta', 'potato', 'rice', 'fish']:
+    if not meals:
         # Provide sample data for common ingredients when API fails
         sample_meals = {
             'chicken': [
@@ -93,22 +100,67 @@ def search_results(request):
                 {'strMeal': 'Fish and Chips', 'strMealThumb': 'https://www.themealdb.com/images/media/meals/ysxwuq1487323065.jpg', 'idMeal': '52802'},
                 {'strMeal': 'Grilled Salmon', 'strMealThumb': 'https://www.themealdb.com/images/media/meals/xxrxux1503070723.jpg', 'idMeal': '52773'},
                 {'strMeal': 'Fish Pie', 'strMealThumb': 'https://www.themealdb.com/images/media/meals/ysxwuq1487323065.jpg', 'idMeal': '52804'}
+            ],
+            'vegetable': [
+                {'strMeal': 'Vegetable Stir Fry', 'strMealThumb': 'https://www.themealdb.com/images/media/meals/nnvpqx1511352404.jpg', 'idMeal': '52955'},
+                {'strMeal': 'Roasted Vegetable Medley', 'strMealThumb': 'https://www.themealdb.com/images/media/meals/wrpwuu1511786491.jpg', 'idMeal': '52960'},
+                {'strMeal': 'Vegetable Soup', 'strMealThumb': 'https://www.themealdb.com/images/media/meals/wgrrhy1511786691.jpg', 'idMeal': '52961'}
+            ],
+            'vegetarian': [
+                {'strMeal': 'Vegetarian Chili', 'strMealThumb': 'https://www.themealdb.com/images/media/meals/wqurxy1511453156.jpg', 'idMeal': '52950'},
+                {'strMeal': 'Vegetarian Lasagna', 'strMealThumb': 'https://www.themealdb.com/images/media/meals/rvxxuy1468312893.jpg', 'idMeal': '52951'},
+                {'strMeal': 'Vegetarian Casserole', 'strMealThumb': 'https://www.themealdb.com/images/media/meals/vptwyt1511450962.jpg', 'idMeal': '52952'}
+            ],
+            'dessert': [
+                {'strMeal': 'Apple Pie', 'strMealThumb': 'https://www.themealdb.com/images/media/meals/qtqwwu1511792650.jpg', 'idMeal': '52970'},
+                {'strMeal': 'Chocolate Cake', 'strMealThumb': 'https://www.themealdb.com/images/media/meals/wtqrqw1511639627.jpg', 'idMeal': '52971'},
+                {'strMeal': 'Tiramisu', 'strMealThumb': 'https://www.themealdb.com/images/media/meals/wvpsxx1468256321.jpg', 'idMeal': '52972'}
+            ],
+            'mushroom': [
+                {'strMeal': 'Mushroom Risotto', 'strMealThumb': 'https://www.themealdb.com/images/media/meals/1548772327.jpg', 'idMeal': '52963'},
+                {'strMeal': 'Creamy Mushroom Soup', 'strMealThumb': 'https://www.themealdb.com/images/media/meals/1548772327.jpg', 'idMeal': '52964'},
+                {'strMeal': 'Stuffed Mushrooms', 'strMealThumb': 'https://www.themealdb.com/images/media/meals/1549542877.jpg', 'idMeal': '52965'}
+            ],
+            'curry': [
+                {'strMeal': 'Chicken Curry', 'strMealThumb': 'https://www.themealdb.com/images/media/meals/wyxwsp1486979827.jpg', 'idMeal': '52975'},
+                {'strMeal': 'Vegetable Curry', 'strMealThumb': 'https://www.themealdb.com/images/media/meals/wqqvyq1511179730.jpg', 'idMeal': '52976'},
+                {'strMeal': 'Beef Rendang', 'strMealThumb': 'https://www.themealdb.com/images/media/meals/bc8v651619789840.jpg', 'idMeal': '52977'}
             ]
         }
         
-        meals = sample_meals.get(ingredient.lower(), [])
-        print(f"Using sample data for {ingredient}: {len(meals)} recipes")
+        # Try to find an exact match for the ingredient
+        if ingredient.lower() in sample_meals:
+            meals = sample_meals[ingredient.lower()]
+            print(f"Using sample data for {ingredient}: {len(meals)} recipes")
+        else:
+            # Try to find a partial match
+            for key in sample_meals.keys():
+                if key in ingredient.lower() or ingredient.lower() in key:
+                    meals = sample_meals[key]
+                    print(f"Using sample data for {key} (partial match for {ingredient}): {len(meals)} recipes")
+                    break
     
-    # Initialize data as an empty dict if it's not defined yet
-    if 'data' not in locals():
-        data = {'meals': None}
-    
-    context = {
-        'ingredient': ingredient,
-        'meals': meals,
-        'count': len(meals) if meals else 0,
-        'using_sample_data': len(meals) > 0 and not data.get('meals') if 'data' in locals() else False
-    }
+    # Check if we have meals to display
+    if not meals:
+        # No results found - prepare a message for the template
+        context = {
+            'ingredient': ingredient,
+            'meals': [],
+            'count': 0,
+            'using_sample_data': False,
+            'error_message': f"Sorry, we couldn't find any recipes with '{ingredient}'. Try another ingredient!"
+        }
+    else:
+        # Initialize data as an empty dict if it's not defined yet
+        if 'data' not in locals():
+            data = {'meals': None}
+        
+        context = {
+            'ingredient': ingredient,
+            'meals': meals,
+            'count': len(meals),
+            'using_sample_data': not data.get('meals') if 'data' in locals() else False
+        }
     
     return render(request, 'meals/search_results.html', context)
 
@@ -126,6 +178,7 @@ def nearby_restaurants(request):
     }
     
     return render(request, 'meals/nearby_restaurants.html', context)
+
 def meal_detail(request, meal_id):
     """Display detailed information about a specific meal."""
     # Call the MealDB API to get meal details

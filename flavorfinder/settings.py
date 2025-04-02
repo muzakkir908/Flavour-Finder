@@ -33,6 +33,17 @@ ALLOWED_HOSTS = ['.compute.amazonaws.com', 'localhost', '127.0.0.1', '*']
 
 GOOGLE_MAPS_API_KEY = 'AIzaSyDV9El6FZy8TtzNDCJ1YX0D_Lf6VfbwJAI'
 
+ADVERTISEMENT_API_URL = "http://3.248.196.143:30012/api/advertisements/"
+ADVERTISEMENT_CACHE_TIMEOUT = 3600  # 1 hour in seconds
+
+# Caching configuration
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+    }
+}
+
 CSRF_COOKIE_SECURE = False
 CSRF_COOKIE_HTTPONLY = False
 
@@ -85,6 +96,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',                'accounts.context_processors.auth_context',  # Add this line
                 'accounts.context_processors.auth_context',  # Add this line
+                'meals.context_processors.advertisements',  # Add this line
 
                 'meals.context_processors.google_maps_api_key',  # Keep only this one for Google Maps
             ],

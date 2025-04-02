@@ -4,6 +4,38 @@
 
 {% block extra_css %}
 <style>
+    /* Compact form styling */
+    .compact-form .card {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .compact-form .card-body {
+        padding: 1rem;
+    }
+    
+    .compact-form .form-select, 
+    .compact-form .form-control {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.875rem;
+    }
+    
+    .compact-form .form-label {
+        font-size: 0.875rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .compact-form .row {
+        margin-bottom: 0.5rem;
+    }
+    
+    /* Make the button smaller */
+    .compact-form .btn {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.875rem;
+    }
+
+    /* Original styles */
     .meal-card {
         transition: transform 0.3s ease;
     }
@@ -37,53 +69,56 @@
 {% block content %}
 <div class="row">
     <div class="col-12">
-        <h1 class="mb-4">Weekly Meal Planner</h1>
+        <h1 class="h4 mb-3">Weekly Meal Planner</h1>  <!-- Smaller heading -->
         
-        <div class="card mb-4">
-            <div class="card-header">
-                <h2 class="h4 mb-0">Customize Your Meal Plan</h2>
-            </div>
-            <div class="card-body">
-                <form action="{% url 'meal_planner' %}" method="get">
-                    <div class="row">
-                        <div class="col-md-3 mb-3">
-                            <label for="diet" class="form-label">Diet Type</label>
-                            <select class="form-select" id="diet" name="diet">
-                                <option value="balanced" {% if diet == 'balanced' %}selected{% endif %}>Balanced</option>
-                                <option value="vegetarian" {% if diet == 'vegetarian' %}selected{% endif %}>Vegetarian</option>
-                                <option value="vegan" {% if diet == 'vegan' %}selected{% endif %}>Vegan</option>
-                                <option value="high-protein" {% if diet == 'high-protein' %}selected{% endif %}>High Protein</option>
-                                <option value="low-carb" {% if diet == 'low-carb' %}selected{% endif %}>Low Carb</option>
-                            </select>
+        <!-- Compact Form -->
+        <div class="compact-form">
+            <div class="card mb-3">  <!-- Removed mb-4 -->
+                <div class="card-header py-2">  <!-- Reduced padding -->
+                    <h2 class="h5 mb-0">Customize Plan</h2>  <!-- Smaller heading -->
+                </div>
+                <div class="card-body">
+                    <form action="{% url 'meal_planner' %}" method="get">
+                        <div class="row g-2">  <!-- Reduced gutter -->
+                            <div class="col-md-3 col-6">  <!-- Responsive columns -->
+                                <label for="diet" class="form-label">Diet</label>
+                                <select class="form-select" id="diet" name="diet">
+                                    <option value="balanced" {% if diet == 'balanced' %}selected{% endif %}>Balanced</option>
+                                    <option value="vegetarian" {% if diet == 'vegetarian' %}selected{% endif %}>Vegetarian</option>
+                                    <option value="vegan" {% if diet == 'vegan' %}selected{% endif %}>Vegan</option>
+                                    <option value="high-protein" {% if diet == 'high-protein' %}selected{% endif %}>High Protein</option>
+                                    <option value="low-carb" {% if diet == 'low-carb' %}selected{% endif %}>Low Carb</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <label for="meals" class="form-label">Meals/Day</label>
+                                <select class="form-select" id="meals" name="meals">
+                                    <option value="1" {% if meals_per_day == 1 %}selected{% endif %}>1 (Dinner Only)</option>
+                                    <option value="2" {% if meals_per_day == 2 %}selected{% endif %}>2 (Breakfast & Dinner)</option>
+                                    <option value="3" {% if meals_per_day == 3 %}selected{% endif %}>3 (Breakfast, Lunch & Dinner)</option>
+                                    <option value="4" {% if meals_per_day == 4 %}selected{% endif %}>4 (3 Meals + 1 Snack)</option>
+                                    <option value="5" {% if meals_per_day == 5 %}selected{% endif %}>5 (3 Meals + 2 Snacks)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <label for="days" class="form-label">Days</label>
+                                <select class="form-select" id="days" name="days">
+                                    <option value="1" {% if days == 1 %}selected{% endif %}>1 Day</option>
+                                    <option value="3" {% if days == 3 %}selected{% endif %}>3 Days</option>
+                                    <option value="5" {% if days == 5 %}selected{% endif %}>5 Days</option>
+                                    <option value="7" {% if days == 7 %}selected{% endif %}>7 Days</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <label for="calories" class="form-label">Calories</label>
+                                <input type="text" class="form-control" id="calories" name="calories" placeholder="2000" value="{{ calories }}">
+                            </div>
                         </div>
-                        <div class="col-md-3 mb-3">
-                            <label for="meals" class="form-label">Meals Per Day</label>
-                            <select class="form-select" id="meals" name="meals">
-                                <option value="1" {% if meals_per_day == 1 %}selected{% endif %}>1 (Dinner Only)</option>
-                                <option value="2" {% if meals_per_day == 2 %}selected{% endif %}>2 (Breakfast & Dinner)</option>
-                                <option value="3" {% if meals_per_day == 3 %}selected{% endif %}>3 (Breakfast, Lunch & Dinner)</option>
-                                <option value="4" {% if meals_per_day == 4 %}selected{% endif %}>4 (3 Meals + 1 Snack)</option>
-                                <option value="5" {% if meals_per_day == 5 %}selected{% endif %}>5 (3 Meals + 2 Snacks)</option>
-                            </select>
+                        <div class="d-flex justify-content-end mt-2">  <!-- Reduced top margin -->
+                            <button type="submit" class="btn btn-primary btn-sm">Generate</button>  <!-- Smaller button -->
                         </div>
-                        <div class="col-md-3 mb-3">
-                            <label for="days" class="form-label">Number of Days</label>
-                            <select class="form-select" id="days" name="days">
-                                <option value="1" {% if days == 1 %}selected{% endif %}>1 Day</option>
-                                <option value="3" {% if days == 3 %}selected{% endif %}>3 Days</option>
-                                <option value="5" {% if days == 5 %}selected{% endif %}>5 Days</option>
-                                <option value="7" {% if days == 7 %}selected{% endif %}>7 Days</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <label for="calories" class="form-label">Target Daily Calories</label>
-                            <input type="text" class="form-control" id="calories" name="calories" placeholder="e.g., 2000" value="{{ calories }}">
-                        </div>
-                    </div>
-                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                        <button type="submit" class="btn btn-primary">Generate Meal Plan</button>
-                    </div>
-                </form>
+                    </form>
+                </div>
             </div>
         </div>
         

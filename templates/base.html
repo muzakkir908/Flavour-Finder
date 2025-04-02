@@ -154,6 +154,31 @@
         </div>
     </footer>
 
+    <!-- Advertisement Modal -->
+    <div class="modal fade" id="adModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Sponsored</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    {% if advertisements %}
+                        {% for ad in advertisements %}
+                            <a href="{{ ad.target_url }}" target="_blank" rel="noopener noreferrer">
+                                <img src="{{ ad.image_url }}" alt="{{ ad.title }}" class="img-fluid rounded mb-3">
+                                <h6>{{ ad.title }}</h6>
+                                <p class="small text-muted">{{ ad.description }}</p>
+                            </a>
+                        {% endfor %}
+                    {% else %}
+                        <p>No sponsored content available at this time.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Back to Top Button -->
     <a href="#" class="back-to-top">
         <i class="fas fa-arrow-up"></i>
@@ -171,6 +196,17 @@
             easing: 'ease-in-out',
             once: true,
             mirror: false
+        });
+
+        // Show ad modal randomly (50% chance)
+        document.addEventListener('DOMContentLoaded', function() {
+            if (Math.random() < 0.5 && {% if advertisements %}true{% else %}false{% endif %}) {
+                const adModal = new bootstrap.Modal(document.getElementById('adModal'));
+                // Show after 5 seconds
+                setTimeout(() => {
+                    adModal.show();
+                }, 5000);
+            }
         });
     </script>
     

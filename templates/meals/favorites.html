@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="row">
-    <div class="col-12">
+    <div class="col-md-9">
         <h1>My Favorite Recipes</h1>
         
         {% if favorites %}
@@ -35,6 +35,29 @@
             <a href="{% url 'home' %}" class="btn btn-primary">Find Recipes</a>
         </div>
         {% endif %}
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Sponsored</h5>
+            </div>
+            <div class="card-body">
+                {% if advertisements %}
+                    {% for ad in advertisements %}
+                        <div class="mb-3">
+                            <a href="{{ ad.target_url }}" target="_blank" rel="noopener noreferrer">
+                                <img src="{{ ad.image_url }}" alt="{{ ad.title }}" class="img-fluid rounded mb-2">
+                                <h6>{{ ad.title }}</h6>
+                                <p class="small text-muted">{{ ad.description }}</p>
+                            </a>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted small">No sponsored content available.</p>
+                {% endif %}
+            </div>
+        </div>
     </div>
 </div>
 
