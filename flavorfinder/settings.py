@@ -35,7 +35,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['.compute.amazonaws.com', 'localhost', '127.0.0.1', '*']
 
-GOOGLE_MAPS_API_KEY = 'AIzaSyDV9El6FZy8TtzNDCJ1YX0D_Lf6VfbwJAI'
+GOOGLE_MAPS_API_KEY = os.environ.get('GOOGLE_MAPS_API_KEY', '')
 
 ADVERTISEMENT_API_URL = "http://3.248.196.143:30012/api/advertisements/"
 ADVERTISEMENT_CACHE_TIMEOUT = 3600  # 1 hour in seconds
